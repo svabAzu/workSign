@@ -47,7 +47,7 @@ class User extends Model {
   email!: string;
 
   @Column({
-    type: DataType.STRING(20),
+    type: DataType.STRING(15),
     allowNull: false,
   })
   phone!: string;
@@ -55,6 +55,7 @@ class User extends Model {
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
+    defaultValue: true,
   })
   state!: boolean;
 

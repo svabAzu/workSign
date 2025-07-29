@@ -33,7 +33,7 @@ class Client extends Model {
   company!: string;
 
   @Column({
-    type: DataType.STRING(100),
+    type: DataType.STRING(15),
   })
   phone!: string;
 
