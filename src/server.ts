@@ -2,6 +2,9 @@ import express from 'express';
 
 import db  from './config/db';
 
+
+import  routerUser  from "./router/auth.router";
+
 const server=express();
 server.use(express.json());
 
@@ -29,5 +32,16 @@ conectDB();
 //      }
 //    }
 //   connectDB()
+
+server.use('/api/',routerUser)
+
+
+
+
+
+
+
+
+
 
 export default server;
