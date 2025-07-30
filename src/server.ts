@@ -3,9 +3,14 @@ import express from 'express';
 import db  from './config/db';
 
 
+
 import  routerUser  from "./router/auth.router";
 import routerSpecialty from './router/specialty';
 import routerTypeUser from './router/typeUser';
+import routerClient from './router/client';
+import routerTask from './router/generalTask';
+import routerTaskStates from './router/generalTaskStates';
+
 
 const server=express();
 server.use(express.json());
@@ -35,15 +40,15 @@ conectDB();
 //    }
 //   connectDB()
 
+
 server.use('/api/',routerUser)
 server.use('/api/specialty',routerSpecialty);
 server.use('/api/typeUser',routerTypeUser);
 
 
-
-
-
-
+server.use('/api/client', routerClient);
+server.use('/api/task', routerTask);
+server.use('/api/taskStates', routerTaskStates);
 
 
 
