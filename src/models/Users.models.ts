@@ -17,7 +17,7 @@ import TasksOperators from './Tasks_operators.models';
 
 @Table({
   tableName: 'users',
-  timestamps: false
+  timestamps: true
 })
 class User extends Model {
   @PrimaryKey

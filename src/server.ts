@@ -4,6 +4,8 @@ import db  from './config/db';
 
 
 import  routerUser  from "./router/auth.router";
+import routerSpecialty from './router/specialty';
+import routerTypeUser from './router/typeUser';
 
 const server=express();
 server.use(express.json());
@@ -34,7 +36,8 @@ conectDB();
 //   connectDB()
 
 server.use('/api/',routerUser)
-
+server.use('/api/specialty',routerSpecialty);
+server.use('/api/typeUser',routerTypeUser);
 
 
 
