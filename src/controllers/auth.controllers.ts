@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 
 export const register = async (req, res) => {
-    const { name, password, email, phone, state, roleId } =
+    const { name, password, email, phone, state, ID_specialty, ID_type_user } =
         req.body;
 
     try {
@@ -28,7 +28,8 @@ export const register = async (req, res) => {
             phone,
             email,
             state,
-            roleId,
+            ID_specialty,
+            ID_type_user,
         });
         const userSaved = await newUser.save();
 
@@ -56,7 +57,7 @@ export const login = async (req, res) => {
     try {
         const userFound = await User.findOne({
             where: { email: email },
-            attributes: ['id', 'full_name', 'surname', 'password', 'email', 'roleId']
+            attributes: ['ID_users', 'name', 'password', 'email', 'ID_specialty', 'ID_type_user']
         });
 
 
@@ -89,7 +90,7 @@ export const login = async (req, res) => {
         jwt.sign({
             id: userFound.id,
         }, "some secret key", {
-            expiresIn: "1d",
+            expiresIn: "15m",
         }, (err, token) => {
             if (err) console.log(err);
             res.cookie('token', token);
@@ -120,9 +121,12 @@ export const profile = async (req, res) => {
 
     res.json({
         id: UserFound.dataValues.id,
-        full_name: UserFound.dataValues.full_name,
-        surname: UserFound.dataValues.sur_name,
+        name: UserFound.dataValues.full_name,
+        phone: UserFound.dataValues.phone,
+        ID_specialty: UserFound.dataValues.ID_specialty,
+        ID_type_user: UserFound.dataValues.ID_type_user,
         email: UserFound.dataValues.email,
+        state: UserFound.dataValues.state,
         CreatedAt: UserFound.dataValues.CreatedAt
     })
 
@@ -161,11 +165,16 @@ export const verify = async (req, res) => {
 
         return res.json({
             id: userFound.dataValues.id,
-            full_name: userFound.dataValues.full_name,
-            surname: userFound.dataValues.full_name,
+            name: userFound.dataValues.full_name,
+            phone: userFound.dataValues.phone,
+            ID_specialty: userFound.dataValues.ID_specialty,
+            ID_type_user: userFound.dataValues.ID_type_user,
             email: userFound.dataValues.email,
-            roleId: userFound.dataValues.roleId,
+            state: userFound.dataValues.state,
             CreatedAt: userFound.dataValues.CreatedAt
+
+
+
         })
     })
 
