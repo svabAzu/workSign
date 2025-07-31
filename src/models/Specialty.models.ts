@@ -5,9 +5,10 @@ import {
   PrimaryKey,
   AutoIncrement,
   DataType,
-  HasMany
+  BelongsToMany // Importa BelongsToMany
 } from 'sequelize-typescript';
 import User from './Users.models';
+import UsersSpecialty from './Users_specialty.models'; // Importa el modelo intermedio
 
 @Table({
   tableName: 'specialty',
@@ -26,7 +27,8 @@ class Specialty extends Model {
   })
   name!: string;
 
-  @HasMany(() => User)
+  // Relación de muchos a muchos con User a través de UsersSpecialty
+  @BelongsToMany(() => User, () => UsersSpecialty)
   users!: User[];
 }
 
