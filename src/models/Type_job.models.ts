@@ -27,10 +27,13 @@ class TypeJob extends Model {
   })
   name!: string;
 
+  // ¡CAMBIO CLAVE AQUÍ!
+  // Aseguramos que Sequelize mapee correctamente la propiedad
   @Column({
-    type: DataType.DATE,
+    type: DataType.STRING,
+    allowNull: true,
   })
-  estimated_delivery_date!: Date;
+  estimated_duration!: string;
 
   @BelongsToMany(() => Job, () => JobsTypeJob)
   jobs!: Job[];

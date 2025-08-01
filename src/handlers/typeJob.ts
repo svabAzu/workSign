@@ -1,34 +1,39 @@
 import { Request,Response } from "express";
 
-import TypeJobs from "../models/Jobs_typejob.models";
+import TypeJob from "../models/Type_job.models";
 
 const postTypeJob = async (req:Request,res:Response)=>{
    try {
-    const job=await TypeJobs.create(req.body)
-    res.json({data:job})
+    const typeJob=await TypeJob.create(req.body)
+    res.json({data:typeJob})
+
    } catch (error) {
     console.log(error)
    }
 }
 
-const getTypeJobs = async ( req:Request, res: Response ) =>{
+
+const getTypeJob = async ( req:Request, res: Response ) =>{
     try {
-        const job=await TypeJobs.findAll()
-        res.json({data:job})
+        const typeJob=await TypeJob.findAll()
+        res.json({data:typeJob})
+
     } catch{
         console.log(Error);
         
     }
 }
 
-const getTypeJobsForId = async (req: Request, res: Response) =>{
+
+const getTypeJobForId = async (req: Request, res: Response) =>{
     try{
     const{id}=req.params
-    const job = await TypeJobs.findByPk (id)
-    if(!job) {
-    return res.status(404).json('El estado de la tarea no existe')
+    const typeJob = await TypeJob.findByPk (id)
+    if(!typeJob) {
+    return res.status(404).json('El typeJob no existe')
     }
-    res.json({data: job})
+    res.json({data: typeJob})
+
     }catch(error) {
     console.log(error)
     }
@@ -36,6 +41,6 @@ const getTypeJobsForId = async (req: Request, res: Response) =>{
 
 export {
     postTypeJob,
-    getTypeJobs,
-    getTypeJobsForId
+    getTypeJob,
+    getTypeJobForId
 }

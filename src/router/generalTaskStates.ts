@@ -1,5 +1,5 @@
 import {Router} from "express"
-import {postTaskStates,getTaskStates,getTaskStatesForId } from "../handlers/GeneralTaskStates"
+import {postTaskStates,getTaskStates,getTaskStatesForId } from "../handlers/generalTaskStates"
 
 const routerTaskStates= Router();
 

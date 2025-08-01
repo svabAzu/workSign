@@ -137,7 +137,7 @@ export const login = async (req, res) => {
                 state: userFound.dataValues.state,
                 createdAt: userFound.dataValues.createdAt // Sequelize usa createdAt/updatedAt por defecto
             });
-            console.log("asdasdasdasdasdas", userFound.dataValues)
+            
         });
 
     } catch (error) {
@@ -185,7 +185,7 @@ export const verify = async (req, res) => {
 
     if (!token) return res.status(401).json(['No autorizado']);
 
-    jwt.verify(token, "some secret key", async (err, user) => {
+    jwt.verify(token, process.env.TOKEN_SECRET, async (err, user) => {
         if (err) return res.status(401).json(['No autorizado']);
 
         const userFound = await User.findByPk(user.id, { // user.id debería ser ID_users
