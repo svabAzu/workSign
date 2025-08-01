@@ -5,14 +5,14 @@ import db  from './config/db';
 
 
 import  routerUser  from "./router/auth.router";
-import routerSpecialty from './router/specialty';
-import routerTypeUser from './router/typeUser';
+import routerSpecialty from './router/specialty.router';
+import routerTypeUser from './router/typeUser.router';
 
-import routerJob from './router/job';
-import routerTypeJob from './router/typeJob';
-import routerClient from './router/client';
-import routerTask from './router/generalTask';
-import routerTaskStates from './router/generalTaskStates';
+import routerJob from './router/job.router';
+import routerTypeJob from './router/typeJob.router';
+import routerClient from './router/client.router';
+import routerTask from './router/general.router.Task';
+import routerTaskStates from './router/generalTaskStates.router';
 
 
 const server=express();
