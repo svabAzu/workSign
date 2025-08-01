@@ -83,6 +83,7 @@ const getJobForId = async (req: Request, res: Response) => {
     } catch (error) {
         console.error("Error al obtener trabajo por ID:", error);
         res.status(500).json({ error: "Error del servidor." });
+
     }
 }
 
