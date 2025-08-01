@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { postClient,getClient,getClientForId } from "../handlers/Client"
+import { postClient,getClient,getClientForId } from "../handlers/client"
 
 const routerClient= Router();
 

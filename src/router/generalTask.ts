@@ -1,5 +1,5 @@
 import {Router} from "express"
-import {postTask,getTask,getTaskForId } from "../handlers/GeneralTask"
+import {postTask,getTask,getTaskForId } from "../handlers/generalTask"
 
 const routerTask= Router();
 

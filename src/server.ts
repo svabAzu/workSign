@@ -7,6 +7,9 @@ import db  from './config/db';
 import  routerUser  from "./router/auth.router";
 import routerSpecialty from './router/specialty';
 import routerTypeUser from './router/typeUser';
+
+import routerJob from './router/job';
+import routerTypeJob from './router/typeJob';
 import routerClient from './router/client';
 import routerTask from './router/generalTask';
 import routerTaskStates from './router/generalTaskStates';
@@ -18,11 +21,11 @@ server.use(express.json());
 async function conectDB(){
     try {
         await db.authenticate()
-        db.sync()
+        await db.sync()
         console.log('La base de datos se conecto correctamente')
     } catch (error) {
         console.log(error)
-        console.log('eeror de conexion en la bd')
+        console.log('error de conexion en la bd')
     }
 }
 conectDB();
@@ -45,7 +48,8 @@ server.use('/api/',routerUser)
 server.use('/api/specialty',routerSpecialty);
 server.use('/api/typeUser',routerTypeUser);
 
-
+server.use('/api/job', routerJob);
+server.use('/api/typeJob', routerTypeJob);
 server.use('/api/client', routerClient);
 server.use('/api/task', routerTask);
 server.use('/api/taskStates', routerTaskStates);
