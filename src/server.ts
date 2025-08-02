@@ -4,7 +4,8 @@ import db  from './config/db';
 
 
 
-import  routerUser  from "./router/auth.router";
+import  routerAuth  from "./router/auth.router";
+import routerUser from './router/users.router';
 import routerSpecialty from './router/specialty.router';
 import routerTypeUser from './router/typeUser.router';
 
@@ -44,7 +45,8 @@ conectDB();
 //   connectDB()
 
 
-server.use('/api/',routerUser)
+server.use('/api/',routerAuth)
+server.use('/api/user',routerUser);
 server.use('/api/specialty',routerSpecialty);
 server.use('/api/typeUser',routerTypeUser);
 

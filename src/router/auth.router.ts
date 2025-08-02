@@ -4,13 +4,13 @@ import { register, login, logout, profile,verify } from "../controllers/auth.con
 // import { validateSchema } from "../middlewares/validator.middleware";
 // import { registerSchema,loginSchema } from "../schemas/auth.schema";
 
-const routerUser = Router();
+const routerAuth = Router();
 
-routerUser.post('/register',/*validateSchema(registerSchema),*/ register);
-routerUser.post('/login', /*validateSchema(loginSchema),*/ login);
-routerUser.post('/logout', logout);
+routerAuth.post('/register',/*validateSchema(registerSchema),*/ register);
+routerAuth.post('/login', /*validateSchema(loginSchema),*/ login);
+routerAuth.post('/logout', logout);
 
-routerUser.get('/verify', verify);
-routerUser.get('/profile', /*authRequierd,*/ profile);
+routerAuth.get('/verify', verify);
+routerAuth.get('/profile', /*authRequierd,*/ profile);
 
-export default routerUser;
+export default routerAuth;
