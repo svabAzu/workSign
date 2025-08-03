@@ -1,41 +1,110 @@
-import { Request,Response } from "express";
-
+import { Request, Response } from "express";
 import GeneralTask from "../models/General_tasks.models";
+import Client from "../models/Client.models";
+import Jobs from "../models/Jobs.models";
+import GeneralTaskStates from "../models/General_task_states.models";
+import TypeJob from "../models/Type_job.models"; // Necesario para la inclusión anidada
 
-const postTask = async (req:Request,res:Response)=>{
-   try {
-    const task=await GeneralTask.create(req.body)
-    res.json({data:task})
-   } catch (error) {
-    console.log(error)
-   }
-}
 
-const getTask = async ( req:Request, res: Response ) =>{
+const postTask = async (req: Request, res: Response) => {
     try {
-        const task=await GeneralTask.findAll()
-        res.json({data:task})
-    } catch{
-        console.log(Error);
-        
+        const task = await GeneralTask.create(req.body);
+        res.status(201).json({ data: task });
+    } catch (error) {
+        console.error("Error al crear la tarea general:", error);
+        res.status(500).json({ error: "Error al crear la tarea general." });
     }
 }
 
-const getTaskForId = async (req: Request, res: Response) =>{
-    try{
-    const{id}=req.params
-    const task = await GeneralTask.findByPk (id)
-    if(!task) {
-    return res.status(404).json('El estado de la tarea no existe')
+const getTask = async (req: Request, res: Response) => {
+    try {
+        const tasks = await GeneralTask.findAll({
+            include: [
+                {
+                    model: Client,
+                    as: 'client' // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
+                },
+                {
+                    model: GeneralTaskStates,
+                    as: 'generalTaskState' // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
+                },
+                {
+                    model: Jobs,
+                    as: 'job', // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
+                    include: [ // Inclusión anidada para traer la relación de Jobs
+                        {
+                            model: TypeJob,
+                            as: 'typeJobs', // Asegúrate de que 'as' coincida con la definición en el modelo Jobs
+                            through: { attributes: [] } // Evita traer la tabla intermedia
+                        }
+                    ]
+                }
+            ]
+        });
+        res.status(200).json({ data: tasks });
+    } catch (error) {
+        console.error("Error al obtener las tareas generales con relaciones:", error);
+        res.status(500).json({ error: "Error al obtener las tareas generales." });
     }
-    res.json({data: task})
-    }catch(error) {
-    console.log(error)
+}
+
+/**
+ * Obtiene una tarea general por ID con sus relaciones
+ */
+const getTaskForId = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const task = await GeneralTask.findByPk(id, {
+            include: [
+                {
+                    model: Client,
+                    as: 'client'
+                },
+                {
+                    model: GeneralTaskStates,
+                    as: 'generalTaskState'
+                },
+                {
+                    model: Jobs,
+                    as: 'job',
+                    include: [
+                        {
+                            model: TypeJob,
+                            as: 'typeJobs',
+                            through: { attributes: [] }
+                        }
+                    ]
+                }
+            ]
+        });
+        if (!task) {
+            return res.status(404).json('La tarea general no existe');
+        }
+        res.status(200).json({ data: task });
+    } catch (error) {
+        console.error("Error al obtener la tarea general por ID con relaciones:", error);
+        res.status(500).json({ error: "Error al obtener la tarea general por ID." });
+    }
+}
+
+const putTaskForId = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const task = await GeneralTask.findByPk(id);
+        if (!task) {
+            return res.status(404).json('La tarea general no existe');
+        }
+        await task.update(req.body);
+        res.status(200).json({ data: task });
+    } catch (error) {
+        console.error("Error al actualizar la tarea general:", error);
+        res.status(500).json({ error: "Error al actualizar la tarea general." });
     }
 }
 
 export {
     postTask,
     getTask,
-    getTaskForId
+    getTaskForId,
+    putTaskForId
 }

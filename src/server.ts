@@ -12,8 +12,10 @@ import routerTypeUser from './router/typeUser.router';
 import routerJob from './router/job.router';
 import routerTypeJob from './router/typeJob.router';
 import routerClient from './router/client.router';
-import routerTask from './router/general.router.Task';
+import routerGeneralTask from './router/generalTask.router';
 import routerTaskStates from './router/generalTaskStates.router';
+import routerMaterial from './router/materials.router';
+import routerOperatorsStates from './router/taskOperatorsStates.router';
 
 
 const server=express();
@@ -53,8 +55,11 @@ server.use('/api/typeUser',routerTypeUser);
 server.use('/api/job', routerJob);
 server.use('/api/typeJob', routerTypeJob);
 server.use('/api/client', routerClient);
-server.use('/api/task', routerTask);
+server.use('/api/generalTask', routerGeneralTask);
 server.use('/api/taskStates', routerTaskStates);
+server.use('/api/materials', routerMaterial);
+server.use('/api/taskOperatorsState', routerOperatorsStates);
+
 
 
 
