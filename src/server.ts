@@ -9,11 +9,13 @@ import routerUser from './router/users.router';
 import routerSpecialty from './router/specialty.router';
 import routerTypeUser from './router/typeUser.router';
 
+import routerTask from './router/task.router';
+
 import routerJob from './router/job.router';
 import routerTypeJob from './router/typeJob.router';
 import routerClient from './router/client.router';
 import routerGeneralTask from './router/generalTask.router';
-import routerTaskStates from './router/generalTaskStates.router';
+import routerGeneralTaskStates from './router/generalTaskStates.router';
 import routerMaterial from './router/materials.router';
 import routerOperatorsStates from './router/taskOperatorsStates.router';
 
@@ -52,11 +54,13 @@ server.use('/api/user',routerUser);
 server.use('/api/specialty',routerSpecialty);
 server.use('/api/typeUser',routerTypeUser);
 
+server.use('/api/task', routerTask);
+
 server.use('/api/job', routerJob);
 server.use('/api/typeJob', routerTypeJob);
 server.use('/api/client', routerClient);
 server.use('/api/generalTask', routerGeneralTask);
-server.use('/api/taskStates', routerTaskStates);
+server.use('/api/GeneraltaskStates', routerGeneralTaskStates);
 server.use('/api/materials', routerMaterial);
 server.use('/api/taskOperatorsState', routerOperatorsStates);
 
