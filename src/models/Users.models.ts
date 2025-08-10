@@ -12,6 +12,7 @@ import {
   BelongsToMany // Importa BelongsToMany
 } from 'sequelize-typescript';
 
+import Task from './Task.models'; // ¡Importa el modelo Task!
 import Specialty from './Specialty.models';
 import TypeUser from './Type_user.models';
 import TasksOperators from './Tasks_operators.models';
@@ -63,8 +64,6 @@ class User extends Model {
 
   // Relaciones
 
-  // Elimina ForeignKey y BelongsTo a Specialty ya que ahora es una relación de muchos a muchos
-
   @ForeignKey(() => TypeUser)
   @Column({
     type: DataType.INTEGER,
@@ -75,12 +74,16 @@ class User extends Model {
   @BelongsTo(() => TypeUser)
   typeUser!: TypeUser;
 
+  // Esta línea es la que faltaba para la relación Muchos a Muchos con Task
+  @BelongsToMany(() => Task, () => TasksOperators)
+  tasks!: Task[];
+
   @HasMany(() => TasksOperators)
   tasksOperators!: TasksOperators[];
 
   // Relación de muchos a muchos con Specialty a través de UsersSpecialty
   @BelongsToMany(() => Specialty, () => UsersSpecialty)
-  specialties!: Specialty[]; // Cambiado a 'specialties' para reflejar múltiples especialidades
+  specialties!: Specialty[];
 }
 
 export default User;

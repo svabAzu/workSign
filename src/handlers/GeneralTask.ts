@@ -22,19 +22,19 @@ const getTask = async (req: Request, res: Response) => {
             include: [
                 {
                     model: Client,
-                    as: 'client' // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
+                    as: 'client' 
                 },
                 {
                     model: GeneralTaskStates,
-                    as: 'generalTaskState' // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
+                    as: 'generalTaskState' 
                 },
                 {
                     model: Jobs,
-                    as: 'job', // Asegúrate de que 'as' coincida con la definición en el modelo GeneralTask
-                    include: [ // Inclusión anidada para traer la relación de Jobs
+                    as: 'job', 
+                    include: [ 
                         {
                             model: TypeJob,
-                            as: 'typeJobs', // Asegúrate de que 'as' coincida con la definición en el modelo Jobs
+                            as: 'typeJobs', 
                             through: { attributes: [] } // Evita traer la tabla intermedia
                         }
                     ]

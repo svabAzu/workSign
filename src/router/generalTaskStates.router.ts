@@ -1,11 +1,11 @@
 import {Router} from "express"
 import {postTaskStates,getTaskStates,getTaskStatesForId,putTaskStates } from "../handlers/generalTaskStates"
 
-const routerTaskStates= Router();
+const routerGeneralTaskStates= Router();
 
-routerTaskStates.post('/', postTaskStates),
-routerTaskStates.get('/', getTaskStates),
-routerTaskStates.get('/:id',  getTaskStatesForId)
-routerTaskStates.put('/:id',  putTaskStates)
+routerGeneralTaskStates.post('/', postTaskStates),
+routerGeneralTaskStates.get('/', getTaskStates),
+routerGeneralTaskStates.get('/:id',  getTaskStatesForId)
+routerGeneralTaskStates.put('/:id',  putTaskStates)
 
-export default routerTaskStates
+export default routerGeneralTaskStates

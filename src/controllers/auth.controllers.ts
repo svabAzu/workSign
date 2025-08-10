@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Specialty from "../models/Specialty.models"; // Importa el modelo Specialty
 import TypeUser from "../models/Type_user.models";
-// import UsersSpecialty from "../models/UsersSpecialty.models"; // No siempre es necesario importar la tabla intermedia directamente para BelongsToMany
+// import UsersSpecialty from "../models/UsersSpecialty.models"; 
 
 export const register = async (req, res) => {
     const { name, password, email, phone, state, specialties: specialtyIds, ID_type_user } = req.body;
