@@ -164,6 +164,58 @@ const getTaskByIdHandler = async (id: number) => {
   }
 };
 
+
+/**
+ * Obtiene todas las tareas asociadas a un ID_general_tasks específico con sus relaciones.
+ * @param generalTaskId ID del generalTask.
+ * @returns Un array de tareas encontradas.
+ */
+const getTasksByGeneralTaskIdHandler = async (generalTaskId: number) => {
+  try {
+    const tasks = await Task.findAll({
+      where: {
+        ID_general_tasks: generalTaskId // Aquí se aplica el filtro por ID_general_tasks
+      },
+      include: [
+        {
+          model: GeneralTask,
+          as: 'generalTask'
+        },
+        // Inclusión anidada para la relación de muchos a muchos con User y OperatorTaskState
+        {
+          model: TasksOperators,
+          as: 'taskOperators', // Alias de la tabla intermedia
+          include: [
+            {
+              model: User,
+              as: 'user',
+            },
+            {
+              model: OperatorTaskState, // Esta es la asociación correcta para OperatorTaskState
+            }
+          ]
+        },
+        // Inclusión anidada para la relación de muchos a muchos con Material
+        {
+          model: MaterialsTasks,
+          as: 'materialsTasks', // Alias de la tabla intermedia
+          include: [
+            {
+              model: Material,
+              as: 'material',
+            }
+          ]
+        },
+      ]
+    });
+    return tasks;
+  } catch (error) {
+    console.error("Error en getTasksByGeneralTaskIdHandler:", error);
+    throw error;
+  }
+};
+
+
 /**
  * Actualiza una tarea por su ID.
  * Se usa una transacción para asegurar que todos los cambios sean atómicos.
@@ -234,23 +286,49 @@ const updateTaskHandler = async (id: number, data: any) => {
 };
 
 /**
- * Elimina una tarea por su ID.
+ * Elimina una tarea por su ID, eliminando primero las dependencias en cascada.
  * @param id ID de la tarea a eliminar.
  * @returns Número de filas eliminadas.
  */
 const deleteTaskHandler = async (id: number) => {
+  const t = await sequelize.transaction();
+
   try {
-    const result = await Task.destroy({ where: { ID_task: id } });
+    // 1. Eliminar los registros relacionados en la tabla intermedia 'materials_tasks'
+    await MaterialsTasks.destroy({
+      where: { ID_task: id },
+      transaction: t,
+    });
+
+    // 2. Eliminar los registros relacionados en la tabla intermedia 'tasks_operators'
+    await TasksOperators.destroy({
+      where: { ID_task: id },
+      transaction: t,
+    });
+
+    // 3. Eliminar la tarea principal de la tabla 'task'
+    const result = await Task.destroy({
+      where: { ID_task: id },
+      transaction: t,
+    });
+
+    // 4. Confirmar la transacción
+    await t.commit();
+
     return result;
   } catch (error) {
+    // Si algo falla, revertir todos los cambios
+    await t.rollback();
     console.error("Error en deleteTaskHandler:", error);
     throw error;
   }
 };
+
 export {
     createTaskHandler,
     getAllTasksHandler,
     getTaskByIdHandler,
+    getTasksByGeneralTaskIdHandler,
     updateTaskHandler,
     deleteTaskHandler
 };

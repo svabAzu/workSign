@@ -2,6 +2,8 @@ import express from 'express';
 
 import db  from './config/db';
 
+import cookieParser from 'cookie-parser';
+
 
 
 import  routerAuth  from "./router/auth.router";
@@ -22,6 +24,7 @@ import routerOperatorsStates from './router/taskOperatorsStates.router';
 
 const server=express();
 server.use(express.json());
+server.use(cookieParser());
 
 async function conectDB(){
     try {
