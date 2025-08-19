@@ -114,8 +114,11 @@ export const login = async (req, res) => {
 
         if (!isMatch) return res.status(404).json(["Contraseña incorrecta"]);
 
+        // Log para depuración: mostrar el ID del usuario antes de crear el token
+        //console.log("ID_users para el token:", userFound.dataValues.ID_users);
+
         jwt.sign({
-            id: userFound.ID_users, // Usa ID_users
+            id: userFound.dataValues.ID_users, // Usa ID_users
         }, process.env.TOKEN_SECRET, {
             expiresIn: "15m",
         }, (err, token) => {
@@ -128,7 +131,7 @@ export const login = async (req, res) => {
             // Al enviar el usuario, podrías enviar también las especialidades
             // userFound.toJSON() es útil para obtener un objeto plano con las relaciones
             res.json({
-                id: userFound.ID_users, // Usa ID_users
+                id: userFound.dataValues.ID_users, // Usa ID_users
                 name: userFound.dataValues.name,
                 phone: userFound.dataValues.phone,
                 specialties: userFound.dataValues.specialties, // Las especialidades ahora se obtienen directamente aquí
@@ -168,7 +171,7 @@ export const profile = async (req, res) => {
     if (!userFound) return res.status(400).json({ message: 'User not found' });
 
     res.json({
-        id: userFound.ID_users, // Usa ID_users
+        id: userFound.dataValues.ID_users, // Usa ID_users
         name: userFound.dataValues.name,
         phone: userFound.dataValues.phone,
         specialties: userFound.dataValues.specialties, // Las especialidades ahora se obtienen directamente aquí
@@ -204,7 +207,7 @@ export const verify = async (req, res) => {
             ID_type_user: userFound.ID_type_user,
             email: userFound.email,
             state: userFound.state,
-            createdAt: userFound.createdAt
+            createdAt: userFound.dataValues.createdAt
         });
     });
 };
