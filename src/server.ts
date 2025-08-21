@@ -1,7 +1,7 @@
 import express from 'express';
 
 import db  from './config/db';
-
+import { corsMiddleware } from './middlewares/cors.middleware';
 import cookieParser from 'cookie-parser';
 
 
@@ -50,6 +50,11 @@ conectDB();
 //      }
 //    }
 //   connectDB()
+
+// Middleware para manejar CORS
+server.use(corsMiddleware);
+
+
 
 
 server.use('/api/',routerAuth)
