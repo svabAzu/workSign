@@ -200,14 +200,14 @@ export const verify = async (req, res) => {
         if (!userFound) return res.status(401).json(['No autorizado']);
 
         return res.json({
-            id: userFound.ID_users, // Usa ID_users
-            name: userFound.name, // Ajustado a 'name'
-            phone: userFound.phone,
-            specialties: userFound.specialties, // Las especialidades asociadas
-            ID_type_user: userFound.ID_type_user,
-            email: userFound.email,
-            state: userFound.state,
-            createdAt: userFound.dataValues.createdAt
+            id: userFound.dataValues.ID_users, // Usa ID_users
+            name: userFound.dataValues.name, // Ajustado a 'name'
+            phone: userFound.dataValues.phone,
+            specialties: userFound.dataValues.specialties, // Las especialidades asociadas
+            ID_type_user: userFound.dataValues.ID_type_user,
+            email: userFound.dataValues.email,
+            state: userFound.dataValues.state,
+            createdAt: userFound.dataValues.createdAt,
         });
     });
 };
