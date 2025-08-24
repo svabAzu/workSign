@@ -7,12 +7,15 @@ import {
   ForeignKey,
   DataType,
   HasMany,
-  BelongsTo
+  BelongsTo,
+  BelongsToMany
 } from 'sequelize-typescript';
 import Job from './Jobs.models';
 import Client from './Client.models';
 import GeneralTaskState from './General_task_states.models';
 import Task from './Task.models';
+import TypeJob from './Type_job.models';
+import GeneralTaskTypeJob from './GeneralTaskTypeJob.models';
 
 @Table({
   tableName: 'general_tasks',
@@ -35,6 +38,11 @@ class GeneralTask extends Model {
     type: DataType.TEXT,
   })
   description!: string;
+
+   @Column({
+    type: DataType.STRING(255),
+  })
+  sketch_url!: string;
 
   @Column({
     type: DataType.DATE,
@@ -75,6 +83,9 @@ class GeneralTask extends Model {
 
   @HasMany(() => Task)
   tasks!: Task[];
+  
+    @BelongsToMany(() => TypeJob, () => GeneralTaskTypeJob)
+    typeJobs!: TypeJob[];
 }
 
 export default GeneralTask;

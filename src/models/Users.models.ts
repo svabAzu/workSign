@@ -36,6 +36,12 @@ class User extends Model {
   })
   name!: string;
 
+   @Column({
+    type: DataType.STRING(100),
+    allowNull: false,
+  })
+  last_name!: string;
+
   @Column({
     type: DataType.STRING(255),
     allowNull: false,
@@ -46,14 +52,28 @@ class User extends Model {
   @Column({
     type: DataType.STRING(100),
     allowNull: false,
+    unique: true,
   })
   email!: string;
+
+
+  @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+        unique: true,
+    })
+    dni!: number;
 
   @Column({
     type: DataType.STRING(15),
     allowNull: false,
   })
   phone!: string;
+
+   @Column({
+    type: DataType.STRING(255),
+  })
+  avatar_url!: string;
 
   @Column({
     type: DataType.BOOLEAN,

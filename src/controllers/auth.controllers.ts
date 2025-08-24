@@ -6,7 +6,7 @@ import TypeUser from "../models/Type_user.models";
 // import UsersSpecialty from "../models/UsersSpecialty.models"; 
 
 export const register = async (req, res) => {
-    const { name, password, email, phone, state, specialties: specialtyIds, ID_type_user } = req.body;
+    const { name, last_name, password, email, dni, phone, avatar_url, state, specialties: specialtyIds, ID_type_user } = req.body;
 
     try {
         const userFound = await User.findOne({
@@ -24,9 +24,12 @@ export const register = async (req, res) => {
 
         const newUser = new User({
             name,
+            last_name,
             password: passwordHash,
+            dni,
             phone,
             email,
+            avatar_url,
             state,
             ID_type_user,
         });
@@ -95,7 +98,7 @@ export const login = async (req, res) => {
                 model: TypeUser,
 
             }],
-            attributes: ['ID_users', 'name', 'password', 'email', 'phone', 'state', 'createdAt'] // Asegúrate de listar todas las columnas necesarias
+            attributes: ['ID_users', 'name', 'last_name', 'password', 'email', 'dni', 'phone', 'avatar_url', 'state', 'createdAt'] // Asegúrate de listar todas las columnas necesarias
         });
 
         if (!userFound) return res.status(404).json(["Usuario no encontrado"]);
@@ -133,6 +136,9 @@ export const login = async (req, res) => {
             res.json({
                 id: userFound.dataValues.ID_users, // Usa ID_users
                 name: userFound.dataValues.name,
+                last_name: userFound.dataValues.last_name,
+                DNI: userFound.dataValues.dni,
+                avatar_url: userFound.dataValues.avatar_url,
                 phone: userFound.dataValues.phone,
                 specialties: userFound.dataValues.specialties, // Las especialidades ahora se obtienen directamente aquí
                 ID_type_user: userFound.dataValues.typeUser, // Mantienes esta propiedad
@@ -140,7 +146,7 @@ export const login = async (req, res) => {
                 state: userFound.dataValues.state,
                 createdAt: userFound.dataValues.createdAt // Sequelize usa createdAt/updatedAt por defecto
             });
-            
+
         });
 
     } catch (error) {
@@ -173,6 +179,9 @@ export const profile = async (req, res) => {
     res.json({
         id: userFound.dataValues.ID_users, // Usa ID_users
         name: userFound.dataValues.name,
+        last_name: userFound.dataValues.last_name,
+        DNI: userFound.dataValues.dni,
+        avatar_url: userFound.dataValues.avatar_url,
         phone: userFound.dataValues.phone,
         specialties: userFound.dataValues.specialties, // Las especialidades ahora se obtienen directamente aquí
         ID_type_user: userFound.dataValues.typeUser, // Mantienes esta propiedad
@@ -202,6 +211,9 @@ export const verify = async (req, res) => {
         return res.json({
             id: userFound.dataValues.ID_users, // Usa ID_users
             name: userFound.dataValues.name, // Ajustado a 'name'
+            last_name: userFound.dataValues.last_name,
+            DNI: userFound.dataValues.dni,
+            avatar_url: userFound.dataValues.avatar_url,
             phone: userFound.dataValues.phone,
             specialties: userFound.dataValues.specialties, // Las especialidades asociadas
             ID_type_user: userFound.dataValues.ID_type_user,
