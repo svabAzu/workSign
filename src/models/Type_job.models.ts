@@ -9,6 +9,8 @@ import {
 } from 'sequelize-typescript';
 import Job from './Jobs.models';
 import JobsTypeJob from './Jobs_typejob.models';
+import GeneralTask from './General_tasks.models';
+import GeneralTaskTypeJob from './GeneralTaskTypeJob.models';
 
 @Table({
   tableName: 'type_job',
@@ -37,6 +39,9 @@ class TypeJob extends Model {
 
   @BelongsToMany(() => Job, () => JobsTypeJob)
   jobs!: Job[];
+  
+    @BelongsToMany(() => GeneralTask, () => GeneralTaskTypeJob)
+    generalTasks!: GeneralTask[];
 }
 
 export default TypeJob;

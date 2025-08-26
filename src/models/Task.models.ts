@@ -53,10 +53,7 @@ class Task extends Model {
   })
   end_date!: Date;
 
-  @Column({
-    type: DataType.STRING(255),
-  })
-  sketch_url!: string;
+ 
 
   @ForeignKey(() => GeneralTask)
   @Column({
