@@ -1,8 +1,26 @@
 import { ZodError } from 'zod';
 
 export const validateSchema = (schema) => (req, res, next) => {
+    // Preprocesar los datos para convertir tipos
+    const body = { ...req.body };
+    if (body.dni) body.dni = Number(body.dni);
+    if (body.ID_type_user) body.ID_type_user = Number(body.ID_type_user);
+    if (body.state !== undefined) body.state = body.state === 'true' || body.state === true;
+    if (body.specialties) {
+        if (typeof body.specialties === 'string') {
+            try {
+                body.specialties = JSON.parse(body.specialties);
+            } catch {
+                body.specialties = [];
+            }
+        }
+    }
+    // avatar_url puede venir como undefined si se usa multer
+    if (body.avatar_url === undefined && req.file) {
+        body.avatar_url = req.file.path;
+    }
     try {
-        schema.parse(req.body);
+        schema.parse(body);
         next();
     } catch (error) {
         // Primero, nos aseguramos de que sea un error de Zod
