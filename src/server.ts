@@ -55,6 +55,8 @@ conectDB();
 server.use(corsMiddleware);
 
 
+server.use('/uploads', express.static('uploads'));
+
 
 
 server.use('/api/',routerAuth)
