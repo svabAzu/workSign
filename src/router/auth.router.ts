@@ -3,10 +3,15 @@ import { register, login, logout, profile,verify } from "../controllers/auth.con
 import { authRequierd } from '../middlewares/validateToken'
  import { validateSchema } from "../middlewares/validator.middleware";
  import { registerSchema,loginSchema } from "../schemas/auth.schema";
+import uploadAvatar from '../middlewares/multerAvatar.middleware';
 
 const routerAuth = Router();
 
-routerAuth.post('/register',authRequierd, validateSchema(registerSchema), register);
+routerAuth.post('/register',
+    uploadAvatar.single('avatar'), // Recibe el archivo con el campo 'avatar'
+    /*authRequierd,*/ 
+    validateSchema(registerSchema), 
+    register);
 routerAuth.post('/login', validateSchema(loginSchema), login);
 routerAuth.post('/logout', logout);
 

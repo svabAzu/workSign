@@ -3,25 +3,53 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Specialty from "../models/Specialty.models"; // Importa el modelo Specialty
 import TypeUser from "../models/Type_user.models";
-// import UsersSpecialty from "../models/UsersSpecialty.models"; 
+import fs from 'fs';
+import path from 'path';
 
 export const register = async (req, res) => {
-    const { name, last_name, password, email, dni, phone, avatar_url, state, specialties: specialtyIds, ID_type_user } = req.body;
+    // Parseo los datos para asegurar los tipos correctos
+    const name = req.body.name;
+    const last_name = req.body.last_name;
+    const password = req.body.password;
+    const email = req.body.email;
+    const phone = req.body.phone;
+   const state = req.body.state === undefined ? true : req.body.state === 'true' || req.body.state === true;
+    const dni = Number(req.body.dni);
+    const ID_type_user = Number(req.body.ID_type_user);
+    let specialtyIds = req.body.specialties;
+    // Si specialties viene como string (ej: '[1,2]'), lo parseo
+    if (typeof specialtyIds === 'string') {
+        try {
+            specialtyIds = JSON.parse(specialtyIds);
+        } catch {
+            specialtyIds = [];
+        }
+    }
+    // El archivo avatar se recibe por multer
+    const avatarFile = req.file;
+    let avatarTempPath = avatarFile ? avatarFile.path : null;
 
     try {
         const userFound = await User.findOne({
             where: { email: email }
         });
         if (userFound) {
+            if (avatarTempPath && fs.existsSync(avatarTempPath)) {
+                fs.unlinkSync(avatarTempPath);
+            }
             return res.status(400).json(['Email ya está en uso']);
         }
 
         if (!password) {
+            if (avatarTempPath && fs.existsSync(avatarTempPath)) {
+                fs.unlinkSync(avatarTempPath);
+            }
             return res.status(400).json(["Password es requerida"]);
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // Creamos el usuario sin avatar_url
         const newUser = new User({
             name,
             last_name,
@@ -29,18 +57,23 @@ export const register = async (req, res) => {
             dni,
             phone,
             email,
-            avatar_url,
             state,
             ID_type_user,
         });
 
         const userSaved = await newUser.save();
-
-
         const newUserId = userSaved.dataValues.ID_users;
 
-        // console.log("User saved:", userSaved.toJSON());
-        //console.log("ID of saved user (using newUserId variable):", newUserId);
+        // Si se subió avatar, lo renombramos con el ID del usuario SOLO si el usuario se creó correctamente
+        let avatar_url = '';
+        if (avatarFile && fs.existsSync(avatarTempPath)) {
+            const ext = path.extname(avatarFile.originalname);
+            const newFileName = `${newUserId}${ext}`;
+            const newPath = path.join(path.dirname(avatarTempPath), newFileName);
+            fs.renameSync(avatarTempPath, newPath);
+            avatar_url = `uploads/avatars/${newFileName}`;
+            await userSaved.update({ avatar_url });
+        }
 
         if (specialtyIds && specialtyIds.length > 0) {
             const existingSpecialties = await Specialty.findAll({
@@ -64,22 +97,24 @@ export const register = async (req, res) => {
             ]
         });
 
-        //console.log("User with relations (before toJSON):", userWithRelations);
-
         if (!userWithRelations) {
-            console.error("findByPk devolvió null para el usuario con ID:", newUserId);
+            // Si el usuario no se recupera, elimina el avatar si existe
+            if (avatar_url) {
+                const avatarFullPath = path.join(__dirname, '../../', avatar_url);
+                if (fs.existsSync(avatarFullPath)) {
+                    fs.unlinkSync(avatarFullPath);
+                }
+            }
             return res.status(500).json(["Error interno: No se pudo recuperar el usuario recién creado con sus relaciones."]);
         }
 
         res.status(201).json(userWithRelations.toJSON());
 
     } catch (error) {
-        console.error("****************** ERROR DETECTADO ******************");
-        console.error("Mensaje de error:", error.message);
-        console.error("Nombre del error:", error.name);
-        console.error("Stack trace:", error.stack);
-        console.error("Objeto error completo:", error);
-        console.error("***************************************************");
+        // Si el archivo fue subido, lo eliminamos porque hubo error
+        if (avatarTempPath && fs.existsSync(avatarTempPath)) {
+            fs.unlinkSync(avatarTempPath);
+        }
         res.status(500).json(["Error al guardar el usuario o asociar especialidades"]);
     }
 };
