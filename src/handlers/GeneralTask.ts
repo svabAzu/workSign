@@ -11,26 +11,29 @@ const postTask = async (req: Request, res: Response) => {
     try {
         // Separa los typeJobIds del body
         const { typeJobIds, ...taskData } = req.body;
+       
         // 1. Crear la tarea general
         const task = await GeneralTask.create(taskData);
+       
+        // console.log('Tarea creada:', task ? task.toJSON() : task);
+       
         // 2. Asociar los TypeJob si se proporcionaron IDs
         if (typeJobIds && typeJobIds.length > 0) {
             await task.$set('typeJobs', typeJobIds);
         }
-        // 3. Volver a buscar la tarea con sus relaciones
-        const taskWithRelations = await GeneralTask.findByPk(task.ID_general_tasks, {
+        // Recarga la tarea con todas sus relaciones
+        await task.reload({
             include: [
-                { model: Client, as: 'client' },
-                { model: GeneralTaskStates, as: 'generalTaskState' },
-                { model: Jobs, as: 'job' },
+                Client,
+                GeneralTaskStates,
+                Jobs,
                 {
                     model: TypeJob,
-                    as: 'typeJobs',
                     through: { attributes: [] }
                 }
             ]
         });
-        res.status(201).json({ data: taskWithRelations });
+        res.status(201).json({ data: task });
     } catch (error) {
         console.error("Error al crear la tarea general:", error);
         res.status(500).json({ error: "Error al crear la tarea general." });
@@ -41,12 +44,11 @@ const getTask = async (req: Request, res: Response) => {
     try {
         const tasks = await GeneralTask.findAll({
             include: [
-                { model: Client, as: 'client' },
-                { model: GeneralTaskStates, as: 'generalTaskState' },
-                { model: Jobs, as: 'job' },
+                Client,
+                GeneralTaskStates,
+                Jobs,
                 {
                     model: TypeJob,
-                    as: 'typeJobs',
                     through: { attributes: [] }
                 }
             ]
@@ -63,12 +65,11 @@ const getTaskForId = async (req: Request, res: Response) => {
         const { id } = req.params;
         const task = await GeneralTask.findByPk(id, {
             include: [
-                { model: Client, as: 'client' },
-                { model: GeneralTaskStates, as: 'generalTaskState' },
-                { model: Jobs, as: 'job' },
+                Client,
+                GeneralTaskStates,
+                Jobs,
                 {
                     model: TypeJob,
-                    as: 'typeJobs',
                     through: { attributes: [] }
                 }
             ]
@@ -97,12 +98,11 @@ const putTaskForId = async (req: Request, res: Response) => {
         }
         const updatedTask = await GeneralTask.findByPk(id, {
             include: [
-                { model: Client, as: 'client' },
-                { model: GeneralTaskStates, as: 'generalTaskState' },
-                { model: Jobs, as: 'job' },
+                Client,
+                GeneralTaskStates,
+                Jobs,
                 {
                     model: TypeJob,
-                    as: 'typeJobs',
                     through: { attributes: [] }
                 }
             ]
