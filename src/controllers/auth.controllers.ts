@@ -111,11 +111,13 @@ export const register = async (req, res) => {
         res.status(201).json(userWithRelations.toJSON());
 
     } catch (error) {
+        console.error("Error en el registro:", error); // <-- AÑADIR ESTA LÍNEA
         // Si el archivo fue subido, lo eliminamos porque hubo error
         if (avatarTempPath && fs.existsSync(avatarTempPath)) {
             fs.unlinkSync(avatarTempPath);
         }
-        res.status(500).json(["Error al guardar el usuario o asociar especialidades"]);
+        // Devuelve un mensaje más detallado en desarrollo si lo deseas
+        res.status(500).json(["Error al guardar el usuario o asociar especialidades", error.message]);
     }
 };
 
