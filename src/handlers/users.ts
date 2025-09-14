@@ -49,6 +49,8 @@ const postUser = async (req: Request, res: Response) => {
     }
 }
 
+
+
 const getUser = async (req: Request, res: Response) => {
     try {
         // Usa findAll() con la opción include para traer las relaciones
@@ -116,9 +118,35 @@ const putUserForId = async (req: Request, res: Response) => {
     }
 }
 
+const getOperators = async (req: Request, res: Response) => {
+    try {
+        const operators = await User.findAll({
+            where: {
+                ID_type_user: 2
+            },
+            include: [
+                {
+                    model: TypeUser,
+                    as: 'typeUser'
+                },
+                {
+                    model: Specialty,
+                    as: 'specialties',
+                    through: { attributes: [] }
+                }
+            ]
+        });
+        res.status(200).json({ data: operators });
+    } catch (error) {
+        console.error("Error al obtener los operadores:", error);
+        res.status(500).json({ error: "Error al obtener los operadores." });
+    }
+}
+
 export {
     postUser,
     getUser,
     getUserForId,
-    putUserForId
+    putUserForId,
+    getOperators
 }
