@@ -53,9 +53,25 @@ const putSpecialtyForId = async (req: Request, res: Response) => {
     }
 }
 
+const deleteSpecialty = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const specialty = await Specialty.findByPk(id);
+        if (!specialty) {
+            return res.status(404).json('La especialidad no existe');
+        }
+        await specialty.destroy();
+        res.status(200).json({ data: "Especialidad eliminada" });
+    } catch (error) {
+        console.error("Error al eliminar la especialidad:", error);
+        res.status(500).json({ error: "Error al eliminar la especialidad." });
+    }
+}
+
 export {
     postSpecialty,
     getSpecialty,
     getSpecialtyForId,
-    putSpecialtyForId
+    putSpecialtyForId,
+    deleteSpecialty
 }
