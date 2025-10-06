@@ -1,10 +1,14 @@
 import { Request,Response } from "express";
-
-
+import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 import User from "../models/Users.models";
 import TypeUser from "../models/Type_user.models";
 import Specialty from "../models/Specialty.models";
 import { Op } from "sequelize";
+import sequelize from "../config/db";
+
+
 
 const postUser = async (req: Request, res: Response) => {
   try {
@@ -54,7 +58,7 @@ const postUser = async (req: Request, res: Response) => {
 const getUser = async (req: Request, res: Response) => {
   try {
     const operators = await User.findAll({
-      where: { ID_type_user: 2 }, // 🔹 Filtro solo operadores
+      where: { ID_type_user: 2, state: true }, // Solo operadores activos
       include: [
         {
           model: TypeUser,
@@ -67,7 +71,6 @@ const getUser = async (req: Request, res: Response) => {
         },
       ],
     });
-
     res.status(200).json({ data: operators });
   } catch (error) {
     console.error("Error al obtener los usuarios operadores:", error);
@@ -81,22 +84,23 @@ const getUser = async (req: Request, res: Response) => {
 const getUserForId = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Usa findByPk() con la opción include para traer las relaciones
-    const user = await User.findByPk(id, {
+    // Buscar usuario activo por ID
+    const user = await User.findOne({
+      where: { ID_users: id, state: true },
       include: [
         {
           model: TypeUser,
-                    as: 'typeUser'
+          as: 'typeUser'
         },
         {
           model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
+          as: 'specialties',
+          through: { attributes: [] }
+        }
+      ]
     });
     if (!user) {
-            return res.status(404).json('El usuario no existe');
+      return res.status(404).json('El usuario no existe o está dado de baja');
     }
     res.status(200).json({ data: user });
   } catch (error) {
@@ -106,66 +110,122 @@ const getUserForId = async (req: Request, res: Response) => {
 }
 
 const putUserForId = async (req: Request, res: Response) => {
-    console.log("--- INICIANDO ACTUALIZACIÓN DE USUARIO ---");
+  
+  const t = await sequelize.transaction();
+  console.log("--- INICIANDO ACTUALIZACIÓN DE USUARIO ---");
   try {
     const { id } = req.params;
-        console.log(`1. ID de usuario a actualizar: ${id}`);
-        console.log("2. Datos recibidos (req.body):", req.body);
+    console.log(`1. ID de usuario a actualizar: ${id}`);
+    console.log("2. Datos recibidos (req.body):", req.body);
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, { include: ["specialties"] });
 
     if (!user) {
-            console.log("-> Error: Usuario no encontrado.");
-            return res.status(404).json('El usuario no existe');
+      console.log("-> Error: Usuario no encontrado.");
+      await t.rollback();
+      return res.status(404).json('El usuario no existe');
     }
-        console.log("3. Usuario encontrado en la BD:", user.toJSON());
+    console.log("4. Usuario encontrado en la BD:", user.toJSON());
 
-        // Clona el body para no modificar el original
-        const updateData = { ...req.body };
-        // Elimina specialtyIds para que no se intente actualizar en la tabla de usuarios
-        delete updateData.specialtyIds;
-        console.log("4. Datos a actualizar en la tabla Users (sin specialtyIds):", updateData);
+    const { name, last_name, email, phone, dni, ID_type_user, password } = req.body;
+    
+    // Construir objeto con datos a actualizar para el modelo User
+    const updateData: any = { name, last_name, email, phone, dni, ID_type_user };
 
-        // Actualiza el usuario con los datos del body
-        await user.update(updateData);
-        console.log("5. Usuario actualizado en la BD.");
-
-    // Si hay IDs de especialidades en el cuerpo, las actualizamos
-    const { specialtyIds } = req.body;
-    if (specialtyIds && Array.isArray(specialtyIds)) {
-            console.log("6. IDs de especialidades recibidos:", specialtyIds);
-      const specialties = await Specialty.findAll({
-        where: {
-                    ID_specialty: { [Op.in]: specialtyIds }
-                }
-      });
-            console.log("7. Especialidades encontradas para asociar:", specialties.map(s => s.toJSON()));
-            await user.$set('specialties', specialties);
-            console.log("8. Asociación de especialidades actualizada.");
+    // 5. Manejo de la contraseña
+    if (password && password.trim() !== '') {
+      console.log("-> Se proporcionó nueva contraseña. Hasheando...");
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    } else {
+      console.log("-> No se proporcionó nueva contraseña o está vacía. Se ignora.");
     }
 
-    // Volver a buscar el usuario con las relaciones actualizadas
-        console.log("9. Volviendo a buscar el usuario con todas las relaciones...");
+    // 6. Manejo del avatar
+    if (req.file) {
+      console.log("-> Se ha subido un nuevo avatar.");
+
+      // Eliminar avatar anterior si existe
+      if (user.avatar_url) {
+        console.log(`-> Eliminando avatar anterior: ${user.avatar_url}`);
+        const oldAvatarPath = path.join(__dirname, '../../', user.avatar_url);
+        if (fs.existsSync(oldAvatarPath)) {
+          try {
+            fs.unlinkSync(oldAvatarPath);
+            console.log("-> Avatar anterior eliminado con éxito.");
+          } catch (error) {
+            console.error("-> Error al eliminar el avatar anterior:", error);
+          }
+        }
+      }
+
+      // Renombrar el nuevo avatar con el ID del usuario
+      const userId = req.params.id;
+      const fileExtension = path.extname(req.file.originalname);
+      const newFilename = `${userId}${fileExtension}`;
+      const newAvatarPath = path.join(req.file.destination, newFilename);
+
+      try {
+        fs.renameSync(req.file.path, newAvatarPath);
+        console.log(`-> Avatar renombrado a: ${newFilename}`);
+        updateData.avatar_url = path.join('uploads', 'avatars', newFilename).replace(/\\/g, '/');
+        console.log(`-> Nueva ruta de avatar: ${updateData.avatar_url}`);
+      } catch (error) {
+        console.error("-> Error al renombrar el avatar:", error);
+      }
+    }
+    
+    console.log("7. Datos a actualizar en la tabla Users:", updateData);
+    await user.update(updateData, { transaction: t });
+    console.log("8. Usuario actualizado en la BD.");
+
+    // 9. Manejo de las especialidades
+    let { specialties: specialtyIds } = req.body;
+    if (specialtyIds) {
+      // Si llega como string '[1,2,3]', lo parseamos
+      if (typeof specialtyIds === 'string') {
+        try {
+          specialtyIds = JSON.parse(specialtyIds);
+          console.log("-> Especialidades parseadas de string a array:", specialtyIds);
+        } catch (e) {
+          console.error("-> Error al parsear 'specialties'. No es un JSON válido.");
+          await t.rollback();
+          return res.status(400).json({ error: "El formato de 'specialties' es incorrecto." });
+        }
+      }
+
+      if (Array.isArray(specialtyIds)) {
+        console.log("10. IDs de especialidades para asociar:", specialtyIds);
+        
+        const specialties = await Specialty.findAll({
+          where: { ID_specialty: { [Op.in]: specialtyIds } },
+          transaction: t
+        });
+        console.log("11. Especialidades encontradas para asociar:", specialties.map(s => s.toJSON()));
+        await user.$set('specialties', specialties, { transaction: t });
+        console.log("12. Asociación de especialidades actualizada.");
+      }
+    } else {
+        console.log("-> No se proporcionaron especialidades. No se realizan cambios en ellas.");
+    }
+
+    await t.commit();
+    console.log("--- TRANSACCIÓN COMPLETADA (COMMIT) ---");
+
+    // 13. Volver a buscar el usuario con las relaciones actualizadas
     const updatedUser = await User.findByPk(id, {
       include: [
-        {
-          model: TypeUser,
-                    as: 'typeUser'
-        },
-        {
-          model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
-        });
-        console.log("10. Usuario final con relaciones:", updatedUser?.toJSON());
+        { model: TypeUser, as: 'typeUser' },
+        { model: Specialty, as: 'specialties', through: { attributes: [] } }
+      ]
+    });
+    console.log("14. Usuario final con relaciones:", updatedUser?.toJSON());
 
-    // Responde con el usuario actualizado
-        console.log("--- ACTUALIZACIÓN COMPLETADA EXITOSAMENTE ---");
     res.status(200).json({ data: updatedUser });
+
   } catch (error) {
-        console.error("--- ERROR DURANTE LA ACTUALIZACIÓN ---", error);
+    await t.rollback();
+    console.error("--- ERROR DURANTE LA ACTUALIZACIÓN (ROLLBACK) ---", error);
     res.status(500).json({ error: "Error al actualizar el usuario." });
   }
 }
@@ -173,21 +233,19 @@ const putUserForId = async (req: Request, res: Response) => {
 const getOperators = async (req: Request, res: Response) => {
   try {
     const operators = await User.findAll({
-      // Se elimina la propiedad 'where' para no aplicar ningún filtro
+      where: { state: true }, // Solo usuarios activos
       include: [
         {
           model: TypeUser,
-                    as: 'typeUser'
+          as: 'typeUser'
         },
         {
           model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
+          as: 'specialties',
+          through: { attributes: [] }
+        }
+      ]
     });
-    // Nota: Si ahora obtienes todos los usuarios, quizá el nombre de la función
-    // 'getOperators' no sea el más adecuado. Podrías renombrarla a 'getAllUsers'.
     res.status(200).json({ data: operators });
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -195,10 +253,28 @@ const getOperators = async (req: Request, res: Response) => {
   }
 }
 
+// PUT para dar de baja usuario (cambiar state a false)
+const putUserState = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    // Cambiar el estado a false (baja)
+    await user.update({ state: false });
+    res.status(200).json({ message: 'Usuario dado de baja correctamente' });
+  } catch (error) {
+    console.error('Error al dar de baja el usuario:', error);
+    res.status(500).json({ error: 'Error al dar de baja el usuario.' });
+  }
+}
+
 export {
-    postUser,
-    getUser,
-    getUserForId,
-    putUserForId,
-    getOperators
+  postUser,
+  getUser,
+  getUserForId,
+  putUserForId,
+  getOperators,
+  putUserState
 }
