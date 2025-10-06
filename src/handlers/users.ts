@@ -1,10 +1,12 @@
 import { Request,Response } from "express";
-
-
+import bcrypt from 'bcryptjs';
 import User from "../models/Users.models";
 import TypeUser from "../models/Type_user.models";
 import Specialty from "../models/Specialty.models";
 import { Op } from "sequelize";
+import sequelize from "../config/db";
+
+
 
 const postUser = async (req: Request, res: Response) => {
   try {
@@ -106,66 +108,88 @@ const getUserForId = async (req: Request, res: Response) => {
 }
 
 const putUserForId = async (req: Request, res: Response) => {
-    console.log("--- INICIANDO ACTUALIZACIÓN DE USUARIO ---");
+  
+  const t = await sequelize.transaction();
+  console.log("--- INICIANDO ACTUALIZACIÓN DE USUARIO ---");
   try {
     const { id } = req.params;
-        console.log(`1. ID de usuario a actualizar: ${id}`);
-        console.log("2. Datos recibidos (req.body):", req.body);
+    console.log(`1. ID de usuario a actualizar: ${id}`);
+    console.log("2. Datos recibidos (req.body):", req.body);
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, { include: ["specialties"] });
 
     if (!user) {
-            console.log("-> Error: Usuario no encontrado.");
-            return res.status(404).json('El usuario no existe');
+      console.log("-> Error: Usuario no encontrado.");
+      await t.rollback();
+      return res.status(404).json('El usuario no existe');
     }
-        console.log("3. Usuario encontrado en la BD:", user.toJSON());
+    console.log("4. Usuario encontrado en la BD:", user.toJSON());
 
-        // Clona el body para no modificar el original
-        const updateData = { ...req.body };
-        // Elimina specialtyIds para que no se intente actualizar en la tabla de usuarios
-        delete updateData.specialtyIds;
-        console.log("4. Datos a actualizar en la tabla Users (sin specialtyIds):", updateData);
+    const { name, last_name, email, phone, dni, ID_type_user, password } = req.body;
+    
+    // Construir objeto con datos a actualizar para el modelo User
+    const updateData: any = { name, last_name, email, phone, dni, ID_type_user };
 
-        // Actualiza el usuario con los datos del body
-        await user.update(updateData);
-        console.log("5. Usuario actualizado en la BD.");
+    // 5. Manejo de la contraseña
+    if (password && password.trim() !== '') {
+      console.log("-> Se proporcionó nueva contraseña. Hasheando...");
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    } else {
+      console.log("-> No se proporcionó nueva contraseña o está vacía. Se ignora.");
+    }
+    
+    console.log("7. Datos a actualizar en la tabla Users:", updateData);
+    await user.update(updateData, { transaction: t });
+    console.log("8. Usuario actualizado en la BD.");
 
-    // Si hay IDs de especialidades en el cuerpo, las actualizamos
-    const { specialtyIds } = req.body;
-    if (specialtyIds && Array.isArray(specialtyIds)) {
-            console.log("6. IDs de especialidades recibidos:", specialtyIds);
-      const specialties = await Specialty.findAll({
-        where: {
-                    ID_specialty: { [Op.in]: specialtyIds }
-                }
-      });
-            console.log("7. Especialidades encontradas para asociar:", specialties.map(s => s.toJSON()));
-            await user.$set('specialties', specialties);
-            console.log("8. Asociación de especialidades actualizada.");
+    // 9. Manejo de las especialidades
+    let { specialties: specialtyIds } = req.body;
+    if (specialtyIds) {
+      // Si llega como string '[1,2,3]', lo parseamos
+      if (typeof specialtyIds === 'string') {
+        try {
+          specialtyIds = JSON.parse(specialtyIds);
+          console.log("-> Especialidades parseadas de string a array:", specialtyIds);
+        } catch (e) {
+          console.error("-> Error al parsear 'specialties'. No es un JSON válido.");
+          await t.rollback();
+          return res.status(400).json({ error: "El formato de 'specialties' es incorrecto." });
+        }
+      }
+
+      if (Array.isArray(specialtyIds)) {
+        console.log("10. IDs de especialidades para asociar:", specialtyIds);
+        
+        const specialties = await Specialty.findAll({
+          where: { ID_specialty: { [Op.in]: specialtyIds } },
+          transaction: t
+        });
+        console.log("11. Especialidades encontradas para asociar:", specialties.map(s => s.toJSON()));
+        await user.$set('specialties', specialties, { transaction: t });
+        console.log("12. Asociación de especialidades actualizada.");
+      }
+    } else {
+        console.log("-> No se proporcionaron especialidades. No se realizan cambios en ellas.");
     }
 
-    // Volver a buscar el usuario con las relaciones actualizadas
-        console.log("9. Volviendo a buscar el usuario con todas las relaciones...");
+    await t.commit();
+    console.log("--- TRANSACCIÓN COMPLETADA (COMMIT) ---");
+
+    // 13. Volver a buscar el usuario con las relaciones actualizadas
     const updatedUser = await User.findByPk(id, {
       include: [
-        {
-          model: TypeUser,
-                    as: 'typeUser'
-        },
-        {
-          model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
-        });
-        console.log("10. Usuario final con relaciones:", updatedUser?.toJSON());
+        { model: TypeUser, as: 'typeUser' },
+        { model: Specialty, as: 'specialties', through: { attributes: [] } }
+      ]
+    });
+    console.log("14. Usuario final con relaciones:", updatedUser?.toJSON());
 
-    // Responde con el usuario actualizado
-        console.log("--- ACTUALIZACIÓN COMPLETADA EXITOSAMENTE ---");
     res.status(200).json({ data: updatedUser });
+
   } catch (error) {
-        console.error("--- ERROR DURANTE LA ACTUALIZACIÓN ---", error);
+    await t.rollback();
+    console.error("--- ERROR DURANTE LA ACTUALIZACIÓN (ROLLBACK) ---", error);
     res.status(500).json({ error: "Error al actualizar el usuario." });
   }
 }
