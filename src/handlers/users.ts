@@ -1,5 +1,7 @@
 import { Request,Response } from "express";
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 import User from "../models/Users.models";
 import TypeUser from "../models/Type_user.models";
 import Specialty from "../models/Specialty.models";
@@ -137,6 +139,40 @@ const putUserForId = async (req: Request, res: Response) => {
       updateData.password = await bcrypt.hash(password, salt);
     } else {
       console.log("-> No se proporcionó nueva contraseña o está vacía. Se ignora.");
+    }
+
+    // 6. Manejo del avatar
+    if (req.file) {
+      console.log("-> Se ha subido un nuevo avatar.");
+
+      // Eliminar avatar anterior si existe
+      if (user.avatar_url) {
+        console.log(`-> Eliminando avatar anterior: ${user.avatar_url}`);
+        const oldAvatarPath = path.join(__dirname, '../../', user.avatar_url);
+        if (fs.existsSync(oldAvatarPath)) {
+          try {
+            fs.unlinkSync(oldAvatarPath);
+            console.log("-> Avatar anterior eliminado con éxito.");
+          } catch (error) {
+            console.error("-> Error al eliminar el avatar anterior:", error);
+          }
+        }
+      }
+
+      // Renombrar el nuevo avatar con el ID del usuario
+      const userId = req.params.id;
+      const fileExtension = path.extname(req.file.originalname);
+      const newFilename = `${userId}${fileExtension}`;
+      const newAvatarPath = path.join(req.file.destination, newFilename);
+
+      try {
+        fs.renameSync(req.file.path, newAvatarPath);
+        console.log(`-> Avatar renombrado a: ${newFilename}`);
+        updateData.avatar_url = path.join('uploads', 'avatars', newFilename).replace(/\\/g, '/');
+        console.log(`-> Nueva ruta de avatar: ${updateData.avatar_url}`);
+      } catch (error) {
+        console.error("-> Error al renombrar el avatar:", error);
+      }
     }
     
     console.log("7. Datos a actualizar en la tabla Users:", updateData);
