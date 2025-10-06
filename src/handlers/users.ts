@@ -58,7 +58,7 @@ const postUser = async (req: Request, res: Response) => {
 const getUser = async (req: Request, res: Response) => {
   try {
     const operators = await User.findAll({
-      where: { ID_type_user: 2 }, // 🔹 Filtro solo operadores
+      where: { ID_type_user: 2, state: true }, // Solo operadores activos
       include: [
         {
           model: TypeUser,
@@ -71,7 +71,6 @@ const getUser = async (req: Request, res: Response) => {
         },
       ],
     });
-
     res.status(200).json({ data: operators });
   } catch (error) {
     console.error("Error al obtener los usuarios operadores:", error);
@@ -85,22 +84,23 @@ const getUser = async (req: Request, res: Response) => {
 const getUserForId = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Usa findByPk() con la opción include para traer las relaciones
-    const user = await User.findByPk(id, {
+    // Buscar usuario activo por ID
+    const user = await User.findOne({
+      where: { ID_users: id, state: true },
       include: [
         {
           model: TypeUser,
-                    as: 'typeUser'
+          as: 'typeUser'
         },
         {
           model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
+          as: 'specialties',
+          through: { attributes: [] }
+        }
+      ]
     });
     if (!user) {
-            return res.status(404).json('El usuario no existe');
+      return res.status(404).json('El usuario no existe o está dado de baja');
     }
     res.status(200).json({ data: user });
   } catch (error) {
@@ -233,21 +233,19 @@ const putUserForId = async (req: Request, res: Response) => {
 const getOperators = async (req: Request, res: Response) => {
   try {
     const operators = await User.findAll({
-      // Se elimina la propiedad 'where' para no aplicar ningún filtro
+      where: { state: true }, // Solo usuarios activos
       include: [
         {
           model: TypeUser,
-                    as: 'typeUser'
+          as: 'typeUser'
         },
         {
           model: Specialty,
-                    as: 'specialties',
-                    through: { attributes: [] }
-                }
-            ]
+          as: 'specialties',
+          through: { attributes: [] }
+        }
+      ]
     });
-    // Nota: Si ahora obtienes todos los usuarios, quizá el nombre de la función
-    // 'getOperators' no sea el más adecuado. Podrías renombrarla a 'getAllUsers'.
     res.status(200).json({ data: operators });
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -255,10 +253,28 @@ const getOperators = async (req: Request, res: Response) => {
   }
 }
 
+// PUT para dar de baja usuario (cambiar state a false)
+const putUserState = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    // Cambiar el estado a false (baja)
+    await user.update({ state: false });
+    res.status(200).json({ message: 'Usuario dado de baja correctamente' });
+  } catch (error) {
+    console.error('Error al dar de baja el usuario:', error);
+    res.status(500).json({ error: 'Error al dar de baja el usuario.' });
+  }
+}
+
 export {
-    postUser,
-    getUser,
-    getUserForId,
-    putUserForId,
-    getOperators
+  postUser,
+  getUser,
+  getUserForId,
+  putUserForId,
+  getOperators,
+  putUserState
 }
