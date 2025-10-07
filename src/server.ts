@@ -1,3 +1,4 @@
+import routerTasksOperators from './router/tasksOperators.router';
 import express from 'express';
 
 import db  from './config/db';
@@ -65,6 +66,8 @@ server.use('/api/specialty',routerSpecialty);
 server.use('/api/typeUser',routerTypeUser);
 
 server.use('/api/task', routerTask);
+
+server.use('/api/taskOperator', routerTasksOperators);
 
 server.use('/api/job', routerJob);
 server.use('/api/typeJob', routerTypeJob);
