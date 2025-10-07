@@ -46,6 +46,7 @@ class GeneralTask extends Model {
 
   @Column({
     type: DataType.DATE,
+    defaultValue: DataType.NOW
   })
   creation_date!: Date;
 
