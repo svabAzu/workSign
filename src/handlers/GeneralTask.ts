@@ -3,25 +3,44 @@ import GeneralTask from "../models/General_tasks.models";
 import Client from "../models/Client.models";
 import Jobs from "../models/Jobs.models";
 import GeneralTaskStates from "../models/General_task_states.models";
-import TypeJob from "../models/Type_job.models"; // Necesario para la inclusión anidada
+import TypeJob from "../models/Type_job.models";
+import fs from 'fs';
+import path from 'path';
 import GeneralTaskTypeJob from '../models/GeneralTaskTypeJob.models';
 
 
 const postTask = async (req: Request, res: Response) => {
     try {
-        // Si viene un archivo, guardar la ruta en sketch_url
-        let sketch_url = req.body.sketch_url;
+        const { typeJobIds, sketch_url, ...taskData } = req.body;
+
+        // 1. Crear la tarea general sin la URL del boceto inicialmente
+        const task = await GeneralTask.create(taskData);
+
+        // Si se sube un archivo, renómbralo y actualiza la tarea
         if (req.file) {
-            sketch_url = req.file.path.replace(/\\/g, '/').replace('uploads/', '/uploads/');
+            const taskId = task.get('ID_general_tasks');
+            const newFileName = `${taskId}${path.extname(req.file.originalname)}`;
+            const newPath = path.join('uploads', 'sketches', newFileName);
+
+            fs.renameSync(req.file.path, newPath);
+
+            const finalSketchUrl = newPath.replace(/\\/g, '/');
+            await GeneralTask.update(
+                { sketch_url: finalSketchUrl },
+                { where: { ID_general_tasks: taskId } }
+            );
+        } else if (sketch_url) {
+            await GeneralTask.update(
+                { sketch_url: sketch_url },
+                { where: { ID_general_tasks: task.get('ID_general_tasks') } }
+            );
         }
-        // Separa los typeJobIds del body
-        const { typeJobIds, ...taskData } = req.body;
-        // 1. Crear la tarea general
-        const task = await GeneralTask.create({ ...taskData, sketch_url });
+
         // 2. Asociar los TypeJob si se proporcionaron IDs
         if (typeJobIds && typeJobIds.length > 0) {
             await task.$set('typeJobs', typeJobIds);
         }
+
         // Recarga la tarea con todas sus relaciones
         await task.reload({
             include: [
@@ -34,6 +53,7 @@ const postTask = async (req: Request, res: Response) => {
                 }
             ]
         });
+
         res.status(201).json({ data: task });
     } catch (error) {
         console.error("Error al crear la tarea general:", error);

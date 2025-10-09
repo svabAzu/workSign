@@ -70,6 +70,7 @@ class GeneralTask extends Model {
   @ForeignKey(() => GeneralTaskState)
   @Column({
     type: DataType.INTEGER,
+    defaultValue: 1
   })
   ID_general_task_states!: number;
 
