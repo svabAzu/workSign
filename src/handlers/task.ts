@@ -52,7 +52,6 @@ const createTaskHandler = async (body: any) => {
       for (const material of materials) {
         await newTask.$add('material', material.ID_materials, { 
           through: {
-            quantity: material.quantity,
             observations: material.observations,
           },
           transaction: t

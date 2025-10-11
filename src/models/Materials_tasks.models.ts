@@ -29,10 +29,6 @@ class MaterialsTasks extends Model {
   })
   ID_materials!: number;
 
-  @Column({
-    type: DataType.DECIMAL(10, 2),
-  })
-  quantity!: number;
 
   @Column({
     type: DataType.TEXT,

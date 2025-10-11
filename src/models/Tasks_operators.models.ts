@@ -32,6 +32,7 @@ class TasksOperators extends Model {
 
   @Column({
     type: DataType.DATE,
+    defaultValue: DataType.NOW
   })
   assignment_date!: Date;
 

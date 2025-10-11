@@ -40,18 +40,11 @@ class Task extends Model {
 
   @Column({
     type: DataType.DATE,
+    defaultValue: DataType.NOW
   })
   assignment_date!: Date;
 
-  @Column({
-    type: DataType.DATE,
-  })
-  estimated_delivery_date!: Date;
 
-  @Column({
-    type: DataType.DATE,
-  })
-  end_date!: Date;
 
  
 
