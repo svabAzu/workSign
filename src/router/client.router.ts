@@ -1,9 +1,11 @@
 import {Router} from "express"
 import { postClient,getClient,getClientForId } from "../handlers/client"
+import { validateSchema } from "../middlewares/validator.middleware"
+import { clientSchema } from "../schemas/client.schema"
 
 const routerClient= Router();
 
-routerClient.post('/', postClient),
+routerClient.post('/', validateSchema(clientSchema), postClient),
 routerClient.get('/', getClient),
 routerClient.get('/:id',  getClientForId)
 

@@ -18,3 +18,5 @@ export const loginSchema = z.object({
     email: z.email('Email no válido').min(1, 'El email es requerido'),
     password: z.string().min(1, 'La contraseña es requerida'),
 });
+
+export const updateUserSchema = registerSchema.partial();
