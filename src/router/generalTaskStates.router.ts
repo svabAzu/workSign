@@ -1,5 +1,5 @@
 import {Router} from "express"
-import {postTaskStates,getTaskStates,getTaskStatesForId,putTaskStates } from "../handlers/generalTaskStates.js"
+import {postTaskStates,getTaskStates,getTaskStatesForId,putTaskStates } from "../handlers/generalTaskStates"
 import { validateSchema } from "../middlewares/validator.middleware"
 import { generalTaskStateSchema } from "../schemas/generalTaskStates.schema"
 
