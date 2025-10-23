@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { postTask, getTask, getTaskForId, putTaskForId, updateTaskState } from "../handlers/generalTask";
+import { postTask, getTask, getTaskForId, putTaskForId, updateTaskState } from "../handlers/generalTask.js";
 import uploadSketch from '../middlewares/multerSketch.middleware';
 import { validateSchema } from "../middlewares/validator.middleware";
 import { generalTaskSchema } from "../schemas/generalTask.schema";
