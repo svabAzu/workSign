@@ -15,6 +15,11 @@ export const validateSchema = (schema) => (req, res, next) => {
             }
         }
     }
+    if (body.ID_jobs) body.ID_jobs = Number(body.ID_jobs);
+    if (body.ID_client) body.ID_client = Number(body.ID_client);
+    if (body.ID_general_task_states) body.ID_general_task_states = Number(body.ID_general_task_states);
+    if (body.estimated_delivery_date) body.estimated_delivery_date = new Date(body.estimated_delivery_date);
+
     // avatar_url puede venir como undefined si se usa multer
     if (body.avatar_url === undefined && req.file) {
         body.avatar_url = req.file.path;
