@@ -1,11 +1,13 @@
 import {Router} from "express"
-import {postTaskStates,getTaskStates,getTaskStatesForId,putTaskStates } from "../handlers/generalTaskStates"
+import {postTaskStates,getTaskStates,getTaskStatesForId,putTaskStates } from "../handlers/GeneralTaskStates"
+import { validateSchema } from "../middlewares/validator.middleware"
+import { generalTaskStateSchema } from "../schemas/generalTaskStates.schema"
 
 const routerGeneralTaskStates= Router();
 
-routerGeneralTaskStates.post('/', postTaskStates),
+routerGeneralTaskStates.post('/', validateSchema(generalTaskStateSchema), postTaskStates),
 routerGeneralTaskStates.get('/', getTaskStates),
 routerGeneralTaskStates.get('/:id',  getTaskStatesForId)
-routerGeneralTaskStates.put('/:id',  putTaskStates)
+routerGeneralTaskStates.put('/:id', validateSchema(generalTaskStateSchema),  putTaskStates)
 
 export default routerGeneralTaskStates

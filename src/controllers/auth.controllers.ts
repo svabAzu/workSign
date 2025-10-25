@@ -166,7 +166,11 @@ export const login = async (req, res) => {
                 console.log(err);
                 return res.status(500).json({ message: "Error al generar el token" });
             }
-            res.cookie('token', token);
+            res.cookie('token', token, {
+                httpOnly: process.env.NODE_ENV === 'development' ? true : true, // true en ambos casos para seguridad
+                secure: process.env.NODE_ENV === 'development' ? false : true, // true solo en produccion
+                sameSite: process.env.NODE_ENV === 'development' ? 'lax' : 'none', // 'lax' en desarrollo, 'none' en produccion
+            });
 
             // Al enviar el usuario, podrías enviar también las especialidades
             // userFound.toJSON() es útil para obtener un objeto plano con las relaciones
@@ -194,6 +198,9 @@ export const login = async (req, res) => {
 
 export const logout = (req, res) => {
     res.cookie("token", "", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
         expires: new Date(0),
     });
     return res.sendStatus(200);

@@ -97,7 +97,7 @@ const getAllTasksHandler = async () => {
         {
           model: MaterialsTasks,
           as: 'materialsTasks', // Alias corregido para coincidir con la asociación
-          attributes: ['quantity', 'observations'],
+          attributes: ['observations'],
           // Incluimos el material asociado a través de la tabla intermedia
           include: [
             {
