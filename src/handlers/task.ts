@@ -80,6 +80,10 @@ const getAllTasksHandler = async () => {
       // Incluimos directamente las tablas intermedias
       include: [
         {
+          model: GeneralTask,
+          as: 'generalTask'
+        },
+        {
           model: TasksOperators,
           as: 'taskOperators', // Alias corregido para coincidir con la asociación
           attributes: ['assignment_date', 'observations'],

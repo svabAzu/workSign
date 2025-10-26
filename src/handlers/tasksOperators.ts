@@ -5,6 +5,8 @@ import GeneralTask from '../models/General_tasks.models';
 import OperatorTaskState from '../models/Operator_task_states.models';
 import User from '../models/Users.models';
 import { fn, col } from 'sequelize';
+import Material from '../models/Materials.models';
+import MaterialsTasks from '../models/Materials_tasks.models';
 
 // Crear una asignación tarea-operador
 const createTaskOperator = async (req: Request, res: Response) => {
@@ -61,9 +63,9 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
           attributes: ['ID_users', 'name', 'last_name'],
         }],
         group: [
-          'user.ID_users',
-          'user.name',
-          'user.last_name'
+          col('user.ID_users'),
+          col('user.name'),
+          col('user.last_name')
         ],
         order: [[fn('COUNT', col('ID_task')), 'DESC']],
         raw: true,
@@ -84,4 +86,70 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
     }
   };
 
-export { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload };
+  const getTasksByOperatorId = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      console.log(`Buscando tareas para el operador con ID: ${id}`);
+  
+      // 1. Encontrar todas las tareas asignadas al operador
+      const operatorTasks = await TasksOperators.findAll({
+        where: { ID_user: id },
+        attributes: ['ID_task'],
+        raw: true
+      });
+
+      console.log('Resultado de TasksOperators.findAll:', operatorTasks);
+  
+      if (!operatorTasks || operatorTasks.length === 0) {
+        console.log('No se encontraron tareas asignadas para este operador.');
+        return res.status(200).json([]); // No hay tareas para este operador
+      }
+  
+      // 2. Extraer los IDs de las tareas
+      const taskIds = operatorTasks.map(opTask => opTask.ID_task);
+      console.log('IDs de tareas encontrados:', taskIds);
+  
+      // 3. Buscar todas las tareas con esos IDs y cargar las relaciones
+      const tasks = await Task.findAll({
+        where: {
+          ID_task: taskIds
+        },
+        include: [
+          {
+            model: GeneralTask,
+            as: 'generalTask'
+          },
+          {
+            model: TasksOperators,
+            as: 'taskOperators',
+            include: [
+              {
+                model: User,
+                as: 'user',
+              },
+              {
+                model: OperatorTaskState,
+              }
+            ]
+          },
+          {
+            model: MaterialsTasks,
+            as: 'materialsTasks',
+            include: [
+              {
+                model: Material,
+                as: 'material',
+              }
+            ]
+          },
+        ]
+      });
+  
+      res.status(200).json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks by operator id:", error);
+      res.status(500).json({ error: 'Error al obtener las tareas del operador.' });
+    }
+  };
+  
+export { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId };

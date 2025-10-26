@@ -8,7 +8,9 @@ import { authRequierd } from "../middlewares/validateToken";
 const routerUser = Router();
 
 routerUser.post('/', authRequierd, validateSchema(registerSchema), postUser),
-    routerUser.get('/', authRequierd, getUser),
+    routerUser.get('/', 
+        //authRequierd, 
+        getUser),
     routerUser.get('/operators/all', authRequierd, getOperators);
 routerUser.get('/:id', authRequierd, getUserForId)
 

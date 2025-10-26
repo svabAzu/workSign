@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload } from '../handlers/tasksOperators';
+import { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId } from '../handlers/tasksOperators';
 import { validateSchema } from '../middlewares/validator.middleware';
 import { tasksOperatorsSchema } from '../schemas/tasksOperators.schema';
 import { authRequierd } from '../middlewares/validateToken';
@@ -10,6 +10,11 @@ const routerTasksOperators = Router();
 routerTasksOperators.get('/workload', 
     //authRequierd, 
     getOperatorsWorkload);
+
+// Ruta para obtener las tareas por id de operador
+routerTasksOperators.get('/operator/:id', 
+    //authRequierd, 
+    getTasksByOperatorId);
 
 // Crear asignación tarea-operador
 routerTasksOperators.post('/', validateSchema(tasksOperatorsSchema), createTaskOperator);
