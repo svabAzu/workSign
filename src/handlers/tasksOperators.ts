@@ -7,6 +7,7 @@ import User from '../models/Users.models';
 import { fn, col } from 'sequelize';
 import Material from '../models/Materials.models';
 import MaterialsTasks from '../models/Materials_tasks.models';
+import Client from '../models/Client.models';
 
 // Crear una asignación tarea-operador
 const createTaskOperator = async (req: Request, res: Response) => {
@@ -89,7 +90,7 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
   const getTasksByOperatorId = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      console.log(`Buscando tareas para el operador con ID: ${id}`);
+      //console.log(`Buscando tareas para el operador con ID: ${id}`);
   
       // 1. Encontrar todas las tareas asignadas al operador
       const operatorTasks = await TasksOperators.findAll({
@@ -98,7 +99,7 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
         raw: true
       });
 
-      console.log('Resultado de TasksOperators.findAll:', operatorTasks);
+      //console.log('Resultado de TasksOperators.findAll:', operatorTasks);
   
       if (!operatorTasks || operatorTasks.length === 0) {
         console.log('No se encontraron tareas asignadas para este operador.');
@@ -117,7 +118,13 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
         include: [
           {
             model: GeneralTask,
-            as: 'generalTask'
+            as: 'generalTask',
+            include: [
+              {
+                model: Client,
+                as: 'client'
+              }
+            ]
           },
           {
             model: TasksOperators,
