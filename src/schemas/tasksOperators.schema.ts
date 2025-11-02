@@ -16,3 +16,5 @@ export const tasksOperatorsSchema = z.object({
     }).int()
   })
 });
+
+export const updateTasksOperatorsSchema = z.object({ body: tasksOperatorsSchema.shape.body.partial() });
