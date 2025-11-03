@@ -342,3 +342,80 @@ const getTasksByOperatorId = async (req: Request, res: Response) => {
   };
   
 export { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId, pauseTaskOperator };
+
+// Reactivar una tarea general (desde web admin): poner general en proceso, cambiar operadores pausados a en-proceso y limpiar observations
+const resumeGeneralTask = async (req: Request, res: Response) => {
+  console.log('--- Starting resumeGeneralTask ---');
+  try {
+    const { id } = req.params; // ID_general_tasks
+
+    const t = await sequelize.transaction();
+    try {
+      const generalTask = await GeneralTask.findByPk(id, { transaction: t });
+      if (!generalTask) {
+        await t.rollback();
+        return res.status(404).json({ error: 'GeneralTask no encontrada.' });
+      }
+
+      // Buscar estado "pausado" para operadores y estado "en proceso" para operadores y general
+      const pausedPatterns = ['%paus%', '%pause%', '%parad%', '%deten%'];
+      const inProgressPatterns = ['%proceso%', '%en curso%', '%enproceso%', '%activo%', '%in progress%', '%progress%'];
+
+      const pausedWhere = pausedPatterns.map(p => ({ name: { [Op.iLike]: p } }));
+      const inProgressWhere = inProgressPatterns.map(p => ({ name: { [Op.iLike]: p } }));
+
+      const pausedOperatorState = await OperatorTaskState.findOne({ where: { [Op.or]: pausedWhere }, transaction: t });
+      const inProgressOperatorState = await OperatorTaskState.findOne({ where: { [Op.or]: inProgressWhere }, transaction: t });
+      const inProgressGeneralState = await GeneralTaskState.findOne({ where: { [Op.or]: inProgressWhere }, transaction: t });
+
+      if (!inProgressOperatorState || !inProgressGeneralState) {
+        await t.rollback();
+        return res.status(500).json({ error: 'No se encontró el estado "en proceso" en la configuración. Por favor configura los estados en la base de datos.' });
+      }
+
+      const pausedOperatorId = pausedOperatorState ? Number(pausedOperatorState.get('ID_operator_task_states')) : null;
+      const inProgressOperatorId = Number(inProgressOperatorState.get('ID_operator_task_states'));
+      const inProgressGeneralId = Number(inProgressGeneralState.get('ID_general_task_states'));
+
+      console.log('resumeGeneralTask - pausedOperatorId:', pausedOperatorId, 'inProgressOperatorId:', inProgressOperatorId, 'inProgressGeneralId:', inProgressGeneralId);
+
+      // Obtener tasks relacionadas
+      const tasks = await Task.findAll({ where: { ID_general_tasks: id }, transaction: t });
+      const taskIds = tasks.map(tt => tt.get('ID_task'));
+
+      // Si existe un estado pausado de operador, actualizar sólo esas filas
+      let affectedOperators = 0;
+      if (pausedOperatorId !== null) {
+        const [affected] = await TasksOperators.update(
+          { ID_operator_task_states: inProgressOperatorId, observations: null },
+          { where: { ID_task: taskIds, ID_operator_task_states: pausedOperatorId }, transaction: t }
+        );
+        affectedOperators = affected;
+      } else {
+        // Si no hay estado "pausado" configurado, actualizamos todas las filas que tengan observations no nulo
+        const [affected] = await TasksOperators.update(
+          { ID_operator_task_states: inProgressOperatorId, observations: null },
+          { where: { ID_task: taskIds, observations: { [Op.ne]: null } }, transaction: t }
+        );
+        affectedOperators = affected;
+      }
+
+      // Actualizar estado general a "en proceso"
+      const [affectedGeneral] = await GeneralTask.update({ ID_general_task_states: inProgressGeneralId }, { where: { ID_general_tasks: id }, transaction: t });
+
+      await t.commit();
+
+      const refreshedGeneral = await GeneralTask.findByPk(id);
+      return res.status(200).json({ data: { refreshedGeneral: refreshedGeneral ? refreshedGeneral.get({ plain: true }) : null, affectedOperators, affectedGeneral } });
+    } catch (inner) {
+      console.error('Inner error resumeGeneralTask, rollback:', inner);
+      await t.rollback();
+      throw inner;
+    }
+  } catch (error: any) {
+    console.error('--- ERROR in resumeGeneralTask ---', error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export { resumeGeneralTask };
