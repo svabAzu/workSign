@@ -19,6 +19,8 @@ routerTasksOperators.get('/operator/:id',
 // Crear asignación tarea-operador
 routerTasksOperators.post('/', validateSchema(tasksOperatorsSchema), createTaskOperator);
 // Actualizar estado de la tarea-operador
-routerTasksOperators.put('/:ID_task/:ID_user', validateSchema(updateTasksOperatorsSchema), updateTaskOperatorState);
+routerTasksOperators.put('/:ID_task/:ID_user', 
+    //validateSchema(updateTasksOperatorsSchema), 
+    updateTaskOperatorState);
 
 export default routerTasksOperators;

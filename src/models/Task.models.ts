@@ -54,7 +54,7 @@ class Task extends Model {
   })
   ID_general_tasks!: number;
 
-  @BelongsTo(() => GeneralTask)
+  @BelongsTo(() => GeneralTask, 'ID_general_tasks')
   generalTask!: GeneralTask;
 
   // Relación Muchos a Muchos con User a través de TasksOperators

@@ -83,7 +83,7 @@ class GeneralTask extends Model {
   @BelongsTo(() => GeneralTaskState)
   generalTaskState!: GeneralTaskState;
 
-  @HasMany(() => Task)
+  @HasMany(() => Task, 'ID_general_tasks')
   tasks!: Task[];
   
     @BelongsToMany(() => TypeJob, () => GeneralTaskTypeJob)
