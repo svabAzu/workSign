@@ -153,25 +153,107 @@ const updateTaskOperatorState = async (req: Request, res: Response) => {
   console.log('--- Finished updateTaskOperatorState ---');
 };
 
+// Pausar una tarea-operador: actualizar observations y poner en estado "pausado" la tarea general
+const pauseTaskOperator = async (req: Request, res: Response) => {
+  console.log('--- Starting pauseTaskOperator ---');
+  try {
+    const { ID_task, ID_user } = req.params;
+    const { observations, ID_operator_task_states } = req.body; // mobile puede enviar observaciones y opcionalmente un estado
+
+    const t = await sequelize.transaction();
+    try {
+      const taskOperator = await TasksOperators.findOne({ where: { ID_task, ID_user }, transaction: t });
+      if (!taskOperator) {
+        await t.rollback();
+        return res.status(404).json({ error: 'Asignación no encontrada.' });
+      }
+
+      console.log('Found taskOperator (pause):', taskOperator.get({ plain: true }));
+
+      // Determinar ID del estado "pausado" si no se proporcionó
+      let operatorPausedId = undefined as number | undefined;
+      if (ID_operator_task_states) operatorPausedId = Number(ID_operator_task_states);
+      else {
+        // buscar varios patrones comunes para "pausado"
+        const patterns = ['%paus%', '%pause%', '%parad%', '%deten%'];
+        const whereOr = patterns.map(p => ({ name: { [Op.iLike]: p } }));
+        const found = await OperatorTaskState.findOne({ where: { [Op.or]: whereOr }, transaction: t });
+        if (found) operatorPausedId = Number(found.get('ID_operator_task_states'));
+      }
+
+      // Actualizar observations y, si tenemos un estado, actualizarlo también
+      const updatePayload: any = {};
+      if (observations !== undefined) updatePayload.observations = observations;
+      if (operatorPausedId !== undefined) updatePayload.ID_operator_task_states = operatorPausedId;
+
+      if (Object.keys(updatePayload).length > 0) {
+        await taskOperator.update(updatePayload, { transaction: t });
+        console.log('Updated taskOperator (pause):', taskOperator.get({ plain: true }));
+      } else {
+        console.log('No update payload for taskOperator (pause). Only observations/state not provided or found.');
+      }
+
+      // Actualizar la tarea general a estado "pausado" para informar al admin
+      const task = await Task.findByPk(ID_task, { transaction: t });
+      if (!task) {
+        await t.rollback();
+        return res.status(404).json({ error: 'Tarea no encontrada.' });
+      }
+      const generalTaskId = task.get('ID_general_tasks') as number;
+
+      // buscar estado general 'pausado'
+      const genPatterns = ['%paus%', '%pause%', '%parad%', '%deten%'];
+      const genWhereOr = genPatterns.map(p => ({ name: { [Op.iLike]: p } }));
+      const foundGeneral = await GeneralTaskState.findOne({ where: { [Op.or]: genWhereOr }, transaction: t });
+      if (foundGeneral) {
+        const generalPausedId = Number(foundGeneral.get('ID_general_task_states'));
+        const [affected] = await GeneralTask.update({ ID_general_task_states: generalPausedId }, { where: { ID_general_tasks: generalTaskId }, transaction: t });
+        console.log('GeneralTask set to paused, affected rows:', affected);
+      } else {
+        console.warn('No GeneralTaskState found for paused - admin should configure a "paused" state. Skipping general update.');
+      }
+
+      await t.commit();
+      return res.status(200).json({ data: taskOperator });
+    } catch (errInner) {
+      console.error('Inner error in pauseTaskOperator, rolling back:', errInner);
+      await t.rollback();
+      throw errInner;
+    }
+  } catch (error: any) {
+    console.error('--- ERROR in pauseTaskOperator ---', error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 const getOperatorsWorkload = async (req: Request, res: Response) => {
     try {
-      const workload = await TasksOperators.findAll({
-        attributes: [
-          [fn('COUNT', col('ID_task')), 'taskCount']
-        ],
-        include: [{
-          model: User,
-          attributes: ['ID_users', 'name', 'last_name'],
-        }],
-        group: [
-          col('user.ID_users'),
-          col('user.name'),
-          col('user.last_name')
-        ],
-        order: [[fn('COUNT', col('ID_task')), 'DESC']],
-        raw: true,
-        nest: true
-      });
+        // Determinar el ID del estado "completado" dinámicamente para excluirlo
+        const operatorCompletedState = await OperatorTaskState.findOne({ where: { name: { [Op.iLike]: '%complet%' } } });
+        const completedId = operatorCompletedState ? operatorCompletedState.ID_operator_task_states : 2;
+        console.log('getOperatorsWorkload - excluding state ID (completed):', completedId);
+
+        const workload = await TasksOperators.findAll({
+          attributes: [
+            [fn('COUNT', col('ID_task')), 'taskCount']
+          ],
+          where: {
+            // Excluir tareas cuyos operator_task_state sean 'completado'
+            ID_operator_task_states: { [Op.ne]: completedId }
+          },
+          include: [{
+            model: User,
+            attributes: ['ID_users', 'name', 'last_name'],
+          }],
+          group: [
+            col('user.ID_users'),
+            col('user.name'),
+            col('user.last_name')
+          ],
+          order: [[fn('COUNT', col('ID_task')), 'DESC']],
+          raw: true,
+          nest: true
+        });
   
       const formattedWorkload = workload.map((item: any) => ({
           userId: item.user.ID_users,
@@ -187,7 +269,7 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
     }
   };
 
-  const getTasksByOperatorId = async (req: Request, res: Response) => {
+const getTasksByOperatorId = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       //console.log(`Buscando tareas para el operador con ID: ${id}`);
@@ -259,4 +341,4 @@ const getOperatorsWorkload = async (req: Request, res: Response) => {
     }
   };
   
-export { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId };
+export { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId, pauseTaskOperator };

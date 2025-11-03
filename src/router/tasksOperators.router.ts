@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId } from '../handlers/tasksOperators';
+import { createTaskOperator, updateTaskOperatorState, getOperatorsWorkload, getTasksByOperatorId, pauseTaskOperator } from '../handlers/tasksOperators';
 import { validateSchema } from '../middlewares/validator.middleware';
 import { tasksOperatorsSchema, updateTasksOperatorsSchema } from '../schemas/tasksOperators.schema';
 import { authRequierd } from '../middlewares/validateToken';
@@ -18,9 +18,16 @@ routerTasksOperators.get('/operator/:id',
 
 // Crear asignación tarea-operador
 routerTasksOperators.post('/', validateSchema(tasksOperatorsSchema), createTaskOperator);
+
+
 // Actualizar estado de la tarea-operador
 routerTasksOperators.put('/:ID_task/:ID_user', 
     //validateSchema(updateTasksOperatorsSchema), 
     updateTaskOperatorState);
+
+// Pausar una tarea-operador (desde móvil)
+routerTasksOperators.put('/pause/:ID_task/:ID_user', 
+    //validateSchema(updateTasksOperatorsSchema), 
+    pauseTaskOperator);
 
 export default routerTasksOperators;
